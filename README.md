@@ -6,7 +6,7 @@ With root or administrative permissions, it is possible to extract the IdP certi
 
 We've commonly found vCenter backups that contain the data.mdb file as well as several critical CVEs have been released in the past year that lead to access to this file.
 
-If you'd like to know more about several use cases for this tool and how we've used it to gain Administrative access to vCenter hosts check out our blog post: https://horizon3.ai/vcenter_saml_login
+If you'd like to know more about several use cases for this tool and how we've used it to gain Administrative access to vCenter hosts check out our blog post: https://www.horizon3.ai/compromising-vcenter-via-saml-certificates/
 
 ## Usage
 ```
