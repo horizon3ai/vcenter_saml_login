@@ -1,10 +1,10 @@
 # vCenter SAML Login Tool
-A tool to extract the IdP cert from vCenter backups and log in as Administrator
+A tool to extract the Identity Provider (IdP) cert from vCenter backups and log in as Administrator
 
 ## Background
-With root or administrative permissions, it is possible to extract the IdP certificates from the directory service information located within the data.mdb file on the VCSA host. These certificates are stored in cleartext and can be used to sign any SAML authentication request for any user - including the builtin Administrator.
+Commonly, during engagements, we will gain access to vCenter backups on a fileserver or gain root access to the VCSA host through recent CVEs. Logging into the vCenter vSphere UI allows us to easily gain access to more systems, confidential information, as well as show customers the impact of these findings.
 
-We've commonly found vCenter backups that contain the data.mdb file as well as several critical CVEs have been released in the past year that lead to access to this file.
+With root or administrative permissions, it is possible to extract the IdP certificates from the directory service information located within the data.mdb file on the VCSA host. These certificates are stored in cleartext and can be used to sign any SAML authentication request for any user - including the builtin Administrator.
 
 If you'd like to know more about several use cases for this tool and how we've used it to gain Administrative access to vCenter hosts check out our blog post: https://www.horizon3.ai/compromising-vcenter-via-saml-certificates/
 
