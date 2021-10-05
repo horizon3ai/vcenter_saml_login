@@ -4,7 +4,7 @@ A tool to extract the Identity Provider (IdP) cert from vCenter backups and log 
 ## Background
 Commonly, during engagements, we will gain access to vCenter backups on a fileserver or gain root access to the VCSA host through recent CVEs. Logging into the vCenter vSphere UI allows us to easily gain access to more systems, confidential information, as well as show customers the impact of these findings.
 
-With root or administrative permissions, it is possible to extract the IdP certificates from the directory service information located within the data.mdb file on the VCSA host. These certificates are stored in cleartext and can be used to sign any SAML authentication request for any user - including the builtin Administrator.
+The data.mdb file contains the certificates and can be found within vCenter backups as well as on the VCSA host with root permissions. These certificates are stored in cleartext and can be used to sign any SAML authentication request for any user - including the builtin Administrator.
 
 If you'd like to know more about several use cases for this tool and how we've used it to gain Administrative access to vCenter hosts check out our blog post: https://www.horizon3.ai/compromising-vcenter-via-saml-certificates/
 
