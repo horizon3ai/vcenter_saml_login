@@ -102,11 +102,13 @@ def writekey(bytes, verbose):
     return key
 
 
-def check_key_valid(key):
+def check_key_valid(key, verbose=False):
     lines = key.splitlines()
     if lines[1].startswith('MI'):
         return True
     else:
+        if verbose:
+            print('[!] Certificate does not begin with magic bytes')
         return False
 
 
@@ -137,35 +139,49 @@ def get_idp_cert(stream, verbose=False):
 
 def get_trusted_cert1(stream, verbose=False):
     matches = stream.findall(trusted_cert1_flag)
-    for match in matches:
-        stream.read('bytes:50')
+    if matches:
+        for match in matches:
+            stream.read('bytes:50')
+            if verbose:
+                print(f'[!] Looking for cert 1 at position: {match}')
         
-        domain_begin = stream.readto('0x636e3d', bytealigned=True)
-        domain_begin_pos = stream.pos
-        
-        domain_end = stream.readto('0x2c')
-        domain_end_pos = stream.pos
-        
-        stream.pos = domain_begin_pos
-        domain_len = int((domain_end_pos - domain_begin_pos - 8) / 8)
-        domain = stream.read(f'bytes:{domain_len}').decode()
-        cn = stream.read(f'bytes:{76 + domain_len}')
+            domain_begin = stream.readto('0x636e3d', bytealigned=True)
+            domain_begin_pos = stream.pos
+            if verbose:
+                print(f'[!] Domain begin position: {domain_begin_pos}')
 
-        # Get TrustedCertificate1 pem 1
-        cert1_size_hex = stream.read('bytes:2')
-        cert1_size = int(cert1_size_hex.hex(), 16)
-        cert1_bytes = stream.read(f'bytes:{cert1_size}')
-        if b'VMware Engineering' not in cert1_bytes:
-            continue
+            domain_end = stream.readto('0x2c')
+            domain_end_pos = stream.pos
+            if verbose:
+                print(f'[!] Domain end position: {domain_end_pos}')
+
+            stream.pos = domain_begin_pos
+            domain_len = int((domain_end_pos - domain_begin_pos - 8) / 8)
+            domain = stream.read(f'bytes:{domain_len}').decode()
+            cn = stream.read(f'bytes:{76 + domain_len}')
+            if verbose:
+                print(f'[!] Domain: {domain}')
+
+            # Get TrustedCertificate1 pem 1
+            cert1_size_hex = stream.read('bytes:2')
+            cert1_size = int(cert1_size_hex.hex(), 16)
+            cert1_bytes = stream.read(f'bytes:{cert1_size}')
+            if verbose:
+                print(f'[!] Cert 1 size: {cert1_size}')
+
+            if b'VMware Engineering' not in cert1_bytes:
+                if verbose:
+                    print('[!] Cert does not contain VMware Engineering - keep looking')
+                continue
       
-        cert1 = writepem(cert1_bytes, verbose)
-        if not check_key_valid(cert1):
-            continue
+            cert1 = writepem(cert1_bytes, verbose)
+            if not check_key_valid(cert1):
+                continue
 
-        print('[*] Successfully extracted trusted certificate 1')        
-        return cert1, domain
-    
-    print(f'[-] Failed to find the trusted certificate 1')
+            print('[*] Successfully extracted trusted certificate 1')
+            return cert1, domain
+    else:
+        print(f'[-] Failed to find the trusted certificate 1 flags')
 
 
 def get_trusted_cert2(stream, verbose=False):
