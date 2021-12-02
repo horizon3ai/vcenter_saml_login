@@ -1,0 +1,7 @@
+python-dateutil
+signxml
+requests
+lxml
+python-ldap
+pyOpenSSL
+bitstring
