@@ -140,7 +140,10 @@ def get_idp_cert(stream, verbose=False):
 
 def get_domain_from_cn(cn):
     parts = cn.split(',')
-    domain_parts = [ part.lstrip('dc=').lstrip('DC=').strip() for part in parts if 'dc=' in part.lower() ]
+    domain_parts = []
+    for part in parts:
+        if part.lower().startswith('dc='):
+            domain_parts.append(part[3:])
     domain = '.'.join(domain_parts).strip()
     domain = ''.join(char for char in domain if char in printable)
     return domain
