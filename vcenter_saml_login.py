@@ -103,9 +103,23 @@ def writekey(bytes, verbose):
     return key
 
 
-def check_key_valid(key, verbose=False):
-    lines = key.splitlines()
-    if lines[1].startswith('MI'):
+def check_key_valid(key_bytes, verbose=False):
+    """pkcs keys begin with the following hex structure
+    30 82 ?? ?? 02 01 00
+    """
+    if key_bytes.startswith(b"0\x82") and key_bytes[4:7] == b"\x02\x01\x00":
+        return True
+    else:
+        if verbose:
+            print('[!] Key does not begin with magic bytes')
+        return False
+
+
+def check_cert_valid(cert_bytes, verbose=False):
+    """x509 certs begin with the following hex structure
+    30 82 ?? ?? 30 82
+    """
+    if cert_bytes.startswith(b"0\x82") and cert_bytes[4:6] == b"0\x82":
         return True
     else:
         if verbose:
@@ -127,9 +141,9 @@ def get_idp_cert(stream, verbose=False):
             if any(not_it in cert_bytes for not_it in not_it_list):
                 continue
 
-            key = writekey(cert_bytes, verbose)
-            if not check_key_valid(key):
+            if not check_key_valid(cert_bytes):
                 continue
+            key = writekey(cert_bytes, verbose)
  
             print('[*] Successfully extracted the IdP certificate')        
             return key
@@ -188,9 +202,9 @@ def get_trusted_cert1(stream, verbose=False):
                     print('[!] Cert does not contain ssoserverSign - keep looking')
                 continue
       
-            cert1 = writepem(cert1_bytes, verbose)
-            if not check_key_valid(cert1):
+            if not check_cert_valid(cert1_bytes):
                 continue
+            cert1 = writepem(cert1_bytes, verbose)
 
             print('[*] Successfully extracted trusted certificate 1')
             return cert1, domain
@@ -222,9 +236,9 @@ def get_trusted_cert2(stream, verbose=False):
         if verbose:
             print(f'Cert 2 Size: {cert2_size}')
 
-        cert2 = writepem(cert2_bytes, verbose)
-        if not check_key_valid(cert2):
+        if not check_cert_valid(cert2_bytes):
             continue
+        cert2 = writepem(cert2_bytes, verbose)
 
         print('[*] Successfully extracted trusted certificate 2')
         return cert2
