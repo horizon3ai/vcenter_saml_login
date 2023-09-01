@@ -154,46 +154,49 @@ def get_trusted_cert1(stream, verbose=False):
     matches = list(tup)
     if matches:
         for match in matches:
-            stream.pos = match
-            if verbose:
-                print(f'[!] Looking for cert 1 at position: {match}')
-
-            cn_end = stream.readto('0x000013', bytealigned=True)
-            cn_end_pos = stream.pos
-            if verbose:
-                print(f'[!] CN end position: {cn_end_pos}')
-
-            stream.pos = match
-            cn_len = int((cn_end_pos - match - 8) / 8)
-            cn = stream.read(f'bytes:{cn_len}').decode()
-            domain = get_domain_from_cn(cn)
-            if domain:
-                print(f'[*] CN: {cn}')
-                print(f'[*] Domain: {domain}')
-            else:
-                print(f'[!] Failed parsing domain from CN')
-                sys.exit()
-
-            cn = stream.readto(f'0x0002', bytealigned=True)
-
-            # Get TrustedCertificate1 pem 1
-            cert1_size_hex = stream.read('bytes:2')
-            cert1_size = int(cert1_size_hex.hex(), 16)
-            cert1_bytes = stream.read(f'bytes:{cert1_size}')
-            if verbose:
-                print(f'[!] Cert 1 size: {cert1_size}')
-
-            if b'ssoserverSign' not in cert1_bytes:
+            try:
+                stream.pos = match
                 if verbose:
-                    print('[!] Cert does not contain ssoserverSign - keep looking')
-                continue
-      
-            cert1 = writepem(cert1_bytes, verbose)
-            if not check_key_valid(cert1):
-                continue
+                    print(f'[!] Looking for cert 1 at position: {match}')
 
-            print('[*] Successfully extracted trusted certificate 1')
-            return cert1, domain
+                cn_end = stream.readto('0x000013', bytealigned=True)
+                cn_end_pos = stream.pos
+                if verbose:
+                    print(f'[!] CN end position: {cn_end_pos}')
+
+                stream.pos = match
+                cn_len = int((cn_end_pos - match - 8) / 8)
+                cn = stream.read(f'bytes:{cn_len}').decode()
+                domain = get_domain_from_cn(cn)
+                if domain:
+                    print(f'[*] CN: {cn}')
+                    print(f'[*] Domain: {domain}')
+                else:
+                    print(f'[!] Failed parsing domain from CN')
+                    sys.exit()
+
+                cn = stream.readto(f'0x0002', bytealigned=True)
+
+                # Get TrustedCertificate1 pem 1
+                cert1_size_hex = stream.read('bytes:2')
+                cert1_size = int(cert1_size_hex.hex(), 16)
+                cert1_bytes = stream.read(f'bytes:{cert1_size}')
+                if verbose:
+                    print(f'[!] Cert 1 size: {cert1_size}')
+
+                if b'ssoserverSign' not in cert1_bytes:
+                    if verbose:
+                        print('[!] Cert does not contain ssoserverSign - keep looking')
+                    continue
+        
+                cert1 = writepem(cert1_bytes, verbose)
+                if not check_key_valid(cert1):
+                    continue
+
+                print('[*] Successfully extracted trusted certificate 1')
+                return cert1, domain
+            except:
+                pass
     else:
         print(f'[-] Failed to find the trusted certificate 1 flags')
 
